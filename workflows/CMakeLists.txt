@@ -1,11 +1,5 @@
 cmake_minimum_required(VERSION 3.8.0)
-project(faasm-examples-func)
-
-# -----------------------------------------
-# Most of the variables used transitively used here like compiler or linker
-# flags are set in the sysroot file (WasiToolchain.cmake) and are defined in
-# the build environment file (faasmtools/build.py)
-# -----------------------------------------
+project(tless-workflows)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
@@ -18,7 +12,11 @@ if (CMAKE_SYSTEM_NAME STREQUAL "WASI")
     message(STATUS "TLess: detected wasm build (sysroot=$ENV{FAASM_WASM_SYSROOT})")
     set(CMAKE_EXECUTABLE_SUFFIX ".wasm")
 
+    # Build TLess C++ library
+    # add_subdirectory(libs/tless)
+
     set(TLESS_WORKFLOW_LIBS faasm)
+    # set(TLESS_WORKFLOW_LIBS faasm tless)
 
 else ()
     add_subdirectory(libs/s3)

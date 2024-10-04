@@ -9,3 +9,5 @@ target_link_libraries(tless PUBLIC
     rabe-cpp
     rabe
 )
+
+INSTALL(TARGETS tless)

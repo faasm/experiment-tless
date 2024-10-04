@@ -1,6 +1,7 @@
 from faasmtools.compile_util import wasm_cmake, wasm_copy_upload
-from os import makedirs
+from os import environ, makedirs
 from os.path import dirname, exists, join, realpath
+from shutil import rmtree
 from subprocess import run
 from sys import argv
 
@@ -74,6 +75,9 @@ if __name__ == "__main__":
     debug = False
     if len(argv) == 2 and argv[1] == "--debug":
         debug = True
+    elif len(argv) == 2 and argv[1] == "--clean":
+        rmtree(join(WORKFLOWS_ROOT, "build-native"))
+        rmtree(join(WORKFLOWS_ROOT, "build-wasm"))
 
     # First, build the workflows
     compile(wasm=True, debug=debug)

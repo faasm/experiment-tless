@@ -4,6 +4,9 @@ Workflow based on the MapReduce [example](https://github.com/ddps-lab/serverless
 
 ![workflow diagram](./serverless_workflows_word_count.png)
 
+Assuming you have deployed one of the baselines of choice, you can run a execute
+run of the workflow following these steps.
+
 ## Run the Workflow (Faasm)
 
 To run the workflow, you must first upload the wikipedia dump to S3:
@@ -41,8 +44,7 @@ faasmctl invoke word-count driver --cmdline "word-count/few-files"
 First, deploy the k8s cluster with bare-metal access to SEV nodes:
 
 ```bash
-TODO
-
+# TODO: this does not work, must envsubst!
 kubectl apply -f ${PROJ_ROOT}/workflows/k8s_common.yaml
 kubectl apply -f ${PROJ_ROOT}/workflows/word-count/knative/workflow.yaml
 ```
@@ -66,20 +68,6 @@ then you may execute the workflow by running:
 
 ```bash
 ${PROJ_ROOT}/workflows/word-count/knative/curl_cmd.sh
-```
-
-### NOTES (delete me):
-
-The `driver` function requires the following env. vars:
-
-```
-export S3_BUCKET=tless;
-export S3_HOST=localhost;
-export S3_PASSWORD=minio123;
-export S3_PORT=9000;
-export S3_USER=minio;
-
-export TLESS_S3_DIR=word-count/few-files;
 ```
 
 ## Stages Explained

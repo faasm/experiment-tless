@@ -5,6 +5,7 @@ extern "C"
 }
 
 #include <faasm/faasm.h>
+#include "tless.h"
 #else
 #include <cstdlib>
 #include <fstream>
@@ -102,7 +103,7 @@ int main(int argc, char** argv)
     for (const auto& s3file : s3files) {
 #ifdef __faasm
         printf("word-count(splitter): chaining to mapper with file %s\n", s3file.c_str());
-        int splitterId = faasmChainNamed("mapper", (uint8_t*) s3file.c_str(), s3file.size());
+        int splitterId = tless::chain("mapper", s3file);
         splitterCallIds.push_back(splitterId);
 #else
         std::cout << "file: " << s3file << std::endl;

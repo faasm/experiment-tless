@@ -4,6 +4,8 @@ TLess implements a TEE-agnostic chaining protocol. It has the following steps:
 
 ### Notes
 
+#### CP-ABE Set-Up
+
 Argue that we do not need Multi-Authority ABE[1] as our single authority is the
 single person encrypting things, which is the user, which we trust.
 
@@ -14,6 +16,20 @@ The trusted set-up of the CP-ABE scheme is as follows:
 2. User encrypts each function according to the DAG
 3. User encrypts the bundle from 1 and uploads it to S3.
 3. User uploads encrypted funcs
+
+#### Public Key Distribution
+
+How do ECFs in TLess are bootstrapped with the right keys?
+
+In both cases, secret injection: when we build the WASM payload (or the initrd
+image) we embed a well-known public key. This happens, automatically, when a
+user is uploading the function to the registry.
+
+For example, when we need to validate a user's signature, we can add the
+user's public key to the function code, and measure it.
+
+The same goes for well-known keys/certs like those for the attestation
+service.
 
 ### 0. Receive Request
 

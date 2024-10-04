@@ -10,6 +10,8 @@
 // of WASM.
 extern "C" {
 int32_t __tless_get_dag_size();
+
+void __tless_get_attestation_jwt();
 }
 
 /* Main TLess C++ API

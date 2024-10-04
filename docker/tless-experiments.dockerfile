@@ -12,8 +12,8 @@ RUN rm -rf /code \
     # Checkout to examples repo to a specific commit
     && git clone https://github.com/faasm/examples /code/examples \
     && cd /code/examples \
-    # TODO: update commit when faasm/examples#42 lands
-    && git checkout a8dcad0d7e132810f59ff75ec346bbd95a7f570e \
+    # TODO: update commit when faasm/examples#43 lands
+    && git checkout f5fe021d778b758d4ad1e1ab59a66e93ce023881 \
     && git submodule update --init -f cpp \
     && git clone https://github.com/faasm/experiment-tless /code/experiment-tless \
     && cp -r /code/experiment-tless/workflows /code/examples/

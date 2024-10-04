@@ -20,6 +20,10 @@ bool checkChain()
     // 0. Get execution request (i.e. faabric::Message?)
 
     // 1. Get TEE certificate
+    // 1.1. Generate quote w/ public key for MAA
+    // 1.2. Send quote to MAA for validation
+    // 1.3. Decrypt it here
+
 }
 
 int32_t chain(const std::string& funcName, const std::string& inputData)

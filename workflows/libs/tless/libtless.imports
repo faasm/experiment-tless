@@ -1,0 +1,3 @@
+__tless_get_attestation_jwt
+__tless_get_mrenclave
+__tless_is_enabled

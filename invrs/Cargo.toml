@@ -4,15 +4,20 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+aes-gcm = "0.10"
+aes-gcm-siv = { version = "0.10", optional = true }
+bytes = "1.4"
 chrono = "^0.4.38"
 clap = { version = "4.0", features = ["derive"] }
 csv = "^1.1"
 env_logger = "^0.10"
 futures-util = "0.3"
+hex = "0.4.3"
 indicatif = "^0.17"
 log = "^0.4"
 minio = { git = "https://github.com/minio/minio-rs.git", rev = "b254b2f7aeaf18a1588a8800ff9b877b7885236e" }
 plotters = "^0.3.7"
+rabe = { git = "https://github.com/faasm/rabe.git", rev = "0dc7696a95eef44dd051e1d9c2e5c2c8c35211bf" }
 rand = "0.8.5"
 serde = { version = "^1.0", features = ["derive"] }
 serde_json = "^1.0"

@@ -9,11 +9,16 @@ if (CMAKE_SYSTEM_NAME STREQUAL "WASI")
     set(CMAKE_EXECUTABLE_SUFFIX ".wasm")
 
     # Build TLess C++ library
-    # TODO: add rabe and jwt-cpp here too
     add_subdirectory(libs/tless)
 
     set(TLESS_WORKFLOW_HEADERS ${CMAKE_CURRENT_LIST_DIR}/libs/tless)
     set(TLESS_WORKFLOW_LIBS faasm tless)
+
+    # Test executable for debugging purposes
+    # TODO: delete me
+    add_executable(tless_test test.cpp)
+    target_link_libraries(tless_test ${TLESS_WORKFLOW_LIBS})
+    target_include_directories(tless_test PUBLIC ${TLESS_WORKFLOW_HEADERS})
 else ()
     add_subdirectory(libs/s3)
 

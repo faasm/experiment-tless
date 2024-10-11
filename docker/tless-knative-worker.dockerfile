@@ -7,11 +7,11 @@ LABEL org.opencontainers.image.source=https://github.com/faasm/experiment-tless
 
 # Explicitly copy each workflow separately to minimise space
 COPY --from=build \
-    /code/faasm-examples/workflows/word-count/knative/target/ \
-    /code/faasm-examples/workflows/word-count/knative/target
+    /code/examples/workflows/word-count/knative/target/ \
+    /code/examples/workflows/word-count/knative/target
 COPY --from=build \
-    /code/faasm-examples/workflows/build-native/word-count/ \
-    /code/faasm-examples/workflows/build-native/word-count
+    /code/examples/workflows/build-native/word-count/ \
+    /code/examples/workflows/build-native/word-count
 
 # Copy libraries we need at runtime
 COPY --from=build /usr/local/lib/libaws-cpp-sdk-s3.so /usr/local/lib/

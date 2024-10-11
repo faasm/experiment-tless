@@ -10,16 +10,16 @@ RUN rm -rf /code \
     && mkdir -p /code \
     && cd /code \
     # Checkout to examples repo to a specific commit
-    && git clone https://github.com/faasm/examples /code/faasm-examples \
-    && cd /code/faasm-examples \
-    && git checkout 428a11c80263b82ea8a83157205c4ef0eceab979 \
+    && git clone https://github.com/faasm/examples /code/examples \
+    && cd /code/examples \
+    && git checkout 5cdd79642fba2dcb5cab634d2c53a43dcddf885d \
     && git submodule update --init -f cpp \
     && git clone https://github.com/faasm/experiment-tless /code/experiment-tless \
-    && cp -r /code/experiment-tless/workflows /code/faasm-examples/
+    && cp -r /code/experiment-tless/workflows /code/examples/
 
 # Build workflow code (WASM for Faasm + Native for Knative)
 ENV PATH=${PATH}:/root/.cargo/bin
-RUN cd /code/faasm-examples \
+RUN cd /code/examples \
     # Install faasmtools
     && ./bin/create_venv.sh \
     && source ./venv/bin/activate \

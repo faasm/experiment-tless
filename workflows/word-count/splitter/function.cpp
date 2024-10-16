@@ -77,7 +77,7 @@ int main(int argc, char** argv)
         s3files.push_back(tmpString);
     }
 #else
-    auto rawS3files = s3cli.listKeys(bucketName);
+    auto rawS3files = s3cli.listKeys(bucketName, s3dir);
     for (const auto& key : rawS3files) {
         // Filter by prefix
         if (key.rfind(s3dir, 0) == 0) {

@@ -1,9 +1,10 @@
+use clap::ValueEnum;
 use crate::tasks::s3::S3;
 use std::path::PathBuf;
 use std::str::FromStr;
 use std::{env, fmt};
 
-#[derive(Clone, Debug, PartialEq, Eq, Hash, PartialOrd, Ord)]
+#[derive(Clone, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ValueEnum)]
 pub enum AvailableWorkflow {
     Finra,
     MlTraining,

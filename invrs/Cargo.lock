@@ -1059,6 +1059,7 @@ dependencies = [
  "log",
  "minio",
  "plotters",
+ "rand",
  "serde",
  "serde_json",
  "shell-words",

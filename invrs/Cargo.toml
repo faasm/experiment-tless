@@ -13,6 +13,7 @@ indicatif = "^0.17"
 log = "^0.4"
 minio = { git = "https://github.com/minio/minio-rs.git", rev = "b254b2f7aeaf18a1588a8800ff9b877b7885236e" }
 plotters = "^0.3.7"
+rand = "0.8.5"
 serde = { version = "^1.0", features = ["derive"] }
 serde_json = "^1.0"
 shell-words = "^1.1.0"

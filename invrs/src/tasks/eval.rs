@@ -1,4 +1,5 @@
-use crate::tasks::docker::Docker;
+use crate::env::Env;
+use crate::tasks::docker::{Docker, DockerContainer};
 use crate::tasks::s3::S3;
 use crate::tasks::workflows::{AvailableWorkflow, Workflows};
 use chrono::{DateTime, Duration, TimeZone, Utc};
@@ -214,6 +215,7 @@ impl Eval {
     }
 
     fn run_kubectl_cmd(cmd: &str) -> String {
+        debug!("{}(eval): running kubectl command: {cmd}", Env::SYS_NAME);
         let args: Vec<&str> = cmd.split_whitespace().collect();
 
         let output = Command::new(Self::get_kubectl_cmd())
@@ -232,13 +234,14 @@ impl Eval {
             let output = Self::run_kubectl_cmd(&format!("-n {namespace} get pods -l {label} -o jsonpath='{{..status.conditions[?(@.type==\"Ready\")].status}}'"));
             let values: Vec<&str> = output.split_whitespace().collect();
 
+            debug!("{}(eval): waiting for {num_expected} pods (label: {label}) to be ready...", Env::SYS_NAME);
             if values.len() != num_expected {
-                debug!("invrs(eval): waiting for pods to be ready...");
+                debug!("{}(eval): not enough pods: {} != {num_expected}", Env::SYS_NAME, values.len());
                 continue;
             }
 
             if !values.iter().all(|&item| item == "'True'") {
-                debug!("invrs(eval): waiting for pods to be ready...");
+                debug!("{}(eval): not enough pods in 'Ready' state", Env::SYS_NAME);
                 continue;
             }
 
@@ -294,7 +297,9 @@ impl Eval {
                     EvalBaseline::CcKnative | EvalBaseline::TlessKnative => "kata-qemu-sev",
                     _ => panic!("woops"),
                 },
-            )]),
+                ),
+                ("TLESS_VERSION", &Env::get_version().unwrap()),
+            ]),
         );
 
         let mut kubectl = Command::new(Self::get_kubectl_cmd())
@@ -494,10 +499,13 @@ impl Eval {
         }
 
         // Upload the state for all workflows
-        Workflows::upload_state(EVAL_BUCKET_NAME, true).await;
+        // TODO: add progress bar
+        // TODO: consider re-using between baselines
+        // Workflows::upload_workflow(EVAL_BUCKET_NAME, true).await;
+        Workflows::upload_workflow_state(&AvailableWorkflow::WordCount, EVAL_BUCKET_NAME, true).await;
 
         // Execute each workload individually
-        for workflow in AvailableWorkflow::iter_variants() {
+        for workflow in vec![&AvailableWorkflow::WordCount] { // AvailableWorkflow::iter_variants() {
             // Initialise result file
             Self::init_data_file(workflow, &exp, &baseline);
 
@@ -562,8 +570,8 @@ impl Eval {
     }
 
     fn upload_wasm() {
-        // Upload state for different workflows
-        let docker_tag = Docker::get_docker_tag("tless-experiments".to_string());
+        // Upload state for different workflows from the experiments container
+        let docker_tag = Docker::get_docker_tag(&DockerContainer::Experiments);
 
         for workflow in AvailableWorkflow::iter_variants() {
             let ctr_path = format!("/usr/local/faasm/wasm/{workflow}");
@@ -608,12 +616,12 @@ impl Eval {
         // Upload the state for all workflows
         // TODO: uncomment me in a real deployment
         // TODO: add progress bar
+        // TODO: consider sharing if we have multiple baselines/workflows
         // Workflows::upload_state(EVAL_BUCKET_NAME, true).await;
 
         // Upload the WASM files for all workflows
-        // TODO: uncomment me in a real deployment
         // TODO: add progress bar
-        // Self::upload_wasm();
+        Self::upload_wasm();
 
         // Invoke each workflow
         for workflow in AvailableWorkflow::iter_variants() {

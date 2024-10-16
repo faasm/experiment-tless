@@ -88,19 +88,16 @@ int main(int argc, char** argv)
     id = std::stoi(parts.at(0));
     s3ObjectKey = parts.at(1);
 #else
-    s3::initS3Wrapper();
-    s3::S3Wrapper s3cli;
-
-    // In Knative, we get the object key as an env. var
-    char* s3fileChar = std::getenv("TLESS_S3_FILE");
-    if (s3fileChar == nullptr) {
-        std::cerr << "word-count(splitter): error: must populate TLESS_S3_FILE"
-                  << " env. variable!"
-                  << std::endl;
-
+    if (argc != 3) {
+        std::cerr << "word-count(mapper): error parsing driver input" << std::endl;
         return 1;
     }
-    s3ObjectKey.assign(s3fileChar);
+
+    id = std::stoi(argv[1]);
+    s3ObjectKey = argv[2];
+
+    s3::initS3Wrapper();
+    s3::S3Wrapper s3cli;
 #endif
 
     std::string us = "mapper-" + std::to_string(id);
@@ -137,7 +134,7 @@ int main(int argc, char** argv)
     // Work-out the serialised payload and directory
     auto thisWordCount = serialiseWordCount();
     std::string resultsKey = "word-count/outputs/" + us;
-    printf("word-count(%s): writting result to %s\n", us.c_str(), resultsKey.c_str());
+    std::cout << "word-count(" << us << "): writting result to " << resultsKey << std::endl;
 #ifdef __faasm
     // Overwrite the results key
     ret =

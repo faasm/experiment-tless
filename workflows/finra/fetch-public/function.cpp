@@ -65,19 +65,15 @@ int main(int argc, char** argv)
 
     s3DataFile.assign(inputChar);
 #else
-    s3::initS3Wrapper();
-    s3::S3Wrapper s3cli;
-
-    // In non-WASM deployments we can get the object key as an env. variable
-    char* s3dirChar = std::getenv("TLESS_S3_DATA_FILE");
-    if (s3dirChar == nullptr) {
-        std::cerr << "finra(fetch-public): error: must populate TLESS_S3_DATA_FILE"
-                  << " env. variable!"
+    if (argc != 2) {
+        std::cerr << "finra(fetch-public): error: cannot parse input from driver"
                   << std::endl;
-
         return 1;
     }
-    s3DataFile.assign(s3dirChar);
+    s3DataFile = argv[1];
+
+    s3::initS3Wrapper();
+    s3::S3Wrapper s3cli;
 #endif
 
     std::cout << "finra(fetch-public): fetching public trades data from "
@@ -130,6 +126,7 @@ int main(int argc, char** argv)
     }
 #else
     s3cli.addKeyStr(bucketName, key, serializedTradeData);
+    s3::shutdownS3Wrapper();
 #endif
 
     return 0;

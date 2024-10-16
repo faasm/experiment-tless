@@ -220,9 +220,12 @@ std::vector<std::string> S3Wrapper::listBuckets()
     return bucketNames;
 }
 
-std::vector<std::string> S3Wrapper::listKeys(const std::string& bucketName)
+std::vector<std::string> S3Wrapper::listKeys(const std::string& bucketName, const std::string& prefix)
 {
     auto request = reqFactory<ListObjectsRequest>(bucketName);
+    if (!prefix.empty()) {
+        request.SetPrefix(prefix);
+    }
     auto response = client.ListObjects(request);
 
     std::vector<std::string> keys;

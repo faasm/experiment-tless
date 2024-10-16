@@ -1,4 +1,4 @@
-use crate::tasks::docker::Docker;
+use crate::tasks::docker::{Docker, DockerContainer};
 use crate::tasks::eval::{Eval, EvalExperiment, EvalRunArgs};
 use crate::tasks::s3::S3;
 use clap::{Parser, Subcommand};
@@ -39,8 +39,8 @@ enum Command {
 #[derive(Debug, Subcommand)]
 enum DockerCommand {
     Build {
-        #[arg(long)]
-        ctr: String,
+        #[arg(short, long, num_args = 1.., value_name = "CTR_NAME")]
+        ctr: Vec<DockerContainer>,
         #[arg(long)]
         push: bool,
         #[arg(long)]
@@ -99,6 +99,9 @@ enum S3Command {
         /// Name of the bucket
         #[arg(long)]
         bucket_name: String,
+        /// Prefix
+        #[arg(long)]
+        prefix: Option<String>,
     },
     /// Upload a directory to S3
     UploadDir {
@@ -132,17 +135,17 @@ async fn main() {
     match &cli.task {
         Command::Docker { docker_command } => match docker_command {
             DockerCommand::Build { ctr, push, nocache } => {
-                Docker::build(ctr.to_string(), *push, *nocache);
+                for c in ctr {
+                    Docker::build(c, *push, *nocache);
+                }
             }
             DockerCommand::BuildAll { push, nocache } => {
-                let ctrs = vec!["tless-experiments", "tless-knative-worker"];
-
-                for ctr in &ctrs {
+                for ctr in DockerContainer::iter_variants() {
                     // Do not push the base build image
-                    if *ctr == "tless-experiments" {
-                        Docker::build(ctr.to_string(), false, *nocache);
+                    if *ctr == DockerContainer::Experiments {
+                        Docker::build(ctr, false, *nocache);
                     } else {
-                        Docker::build(ctr.to_string(), *push, *nocache);
+                        Docker::build(ctr, *push, *nocache);
                     }
                 }
             }
@@ -175,8 +178,8 @@ async fn main() {
             S3Command::ListBuckets {} => {
                 S3::list_buckets().await;
             }
-            S3Command::ListKeys { bucket_name } => {
-                S3::list_keys(bucket_name.to_string()).await;
+            S3Command::ListKeys { bucket_name, prefix } => {
+                S3::list_keys(bucket_name.to_string(), prefix).await;
             }
             S3Command::UploadDir {
                 bucket_name,
@@ -189,7 +192,7 @@ async fn main() {
                     s3_path.to_string(),
                 )
                 .await;
-            }
+            },
         },
     }
 }

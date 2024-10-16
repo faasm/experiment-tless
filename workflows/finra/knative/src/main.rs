@@ -10,8 +10,9 @@ use tokio::task::JoinHandle;
 use uuid::Uuid;
 use warp::Filter;
 
-static BINARY_DIR: &str = "/code/faasm-examples/workflows/build-native/word-count";
+static BINARY_DIR: &str = "/code/faasm-examples/workflows/build-native/finra";
 static INVOCATION_COUNTER: Lazy<Arc<Mutex<i64>>> = Lazy::new(|| Arc::new(Mutex::new(0)));
+static WORKFLOW_NAME: &str = "finra(driver)";
 
 // We must wait for the POST event to go through before we can return, as
 // otherwise the chain may not make progress
@@ -49,9 +50,9 @@ pub fn process_event(mut event: Event) -> Event {
 
     event.set_source(match event.source().as_str() {
         "cli" => {
-            println!("cloudevent: executing 'splitter' from cli: {event}");
+            println!("{WORKFLOW_NAME}: executing 'splitter' from cli: {event}");
 
-            Command::new(format!("{}/word-count_splitter", BINARY_DIR))
+            let fetch_public = Command::new(format!("{}/finra_fetch-public", BINARY_DIR))
                 .current_dir(BINARY_DIR)
                 .env("LD_LIBRARY_PATH", "/usr/local/lib")
                 .env("S3_BUCKET", "tless")
@@ -59,11 +60,24 @@ pub fn process_event(mut event: Event) -> Event {
                 .env("S3_PASSWORD", "minio123")
                 .env("S3_PORT", "9000")
                 .env("S3_USER", "minio")
-                .env("TLESS_S3_DIR", "word-count/few-files")
                 .stdout(Stdio::inherit())
                 .stderr(Stdio::inherit())
-                .output()
-                .expect("tless(driver): failed executing command");
+                .arg("finra/yfinance.csv")
+                .spawn()
+                .expect("finra(driver): failed executing command");
+
+            let fetch_private = Command::new(format!("{}/finra_fetch-private", BINARY_DIR))
+                .current_dir(BINARY_DIR)
+                .env("LD_LIBRARY_PATH", "/usr/local/lib")
+                .env("S3_BUCKET", "tless")
+                .env("S3_HOST", "minio")
+                .env("S3_PASSWORD", "minio123")
+                .env("S3_PORT", "9000")
+                .env("S3_USER", "minio")
+                .stdout(Stdio::inherit())
+                .stderr(Stdio::inherit())
+                .spawn()
+                .expect("finra(driver): failed executing command");
 
             "splitter"
         }

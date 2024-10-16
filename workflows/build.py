@@ -7,9 +7,9 @@ from sys import argv
 WORKFLOWS_ROOT = dirname(realpath(__file__))
 
 WORKFLOWS = {
-    "finra": ["driver", "fetch-public", "fetch-private", "audit", "merge"],
-    "ml-training": ["driver", "partition", "pca", "rf", "validation"],
-    "ml-inference": ["driver", "partition", "load", "predict"],
+    # "finra": ["driver", "fetch-public", "fetch-private", "audit", "merge"],
+    # "ml-training": ["driver", "partition", "pca", "rf", "validation"],
+    # "ml-inference": ["driver", "partition", "load", "predict"],
     "word-count": ["driver", "splitter", "mapper", "reducer"],
 }
 
@@ -77,7 +77,7 @@ if __name__ == "__main__":
 
     # First, build the workflows
     compile(wasm=True, debug=debug)
-    # compile(native=True, debug=debug)
+    compile(native=True, debug=debug)
 
     # Second, build the driver function for Knative
-    # compile_driver(debug=debug)
+    compile_driver(debug=debug)

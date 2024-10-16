@@ -1,3 +1,4 @@
+use crate::env::Env;
 use chrono::{DateTime, Utc};
 use futures_util::StreamExt;
 use log::{debug, error, info};
@@ -191,12 +192,13 @@ impl S3 {
         }
     }
 
-    pub async fn list_keys(bucket_name: String) {
-        debug!("invrs(s3): listing keys in bucket {bucket_name}");
+    pub async fn list_keys(bucket_name: String, prefix: &Option<String>) {
+        debug!("{}(s3): listing keys in bucket {bucket_name}", Env::SYS_NAME);
 
         let mut objects = Self::init_s3_client()
             .list_objects(&bucket_name)
             .recursive(true)
+            .prefix(prefix.clone())
             .to_stream()
             .await;
 

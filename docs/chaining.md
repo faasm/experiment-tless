@@ -17,6 +17,10 @@ The trusted set-up of the CP-ABE scheme is as follows:
 3. User encrypts the bundle from 1 and uploads it to S3.
 3. User uploads encrypted funcs
 
+All of this happens in `tlessctl` as part of `tlessctl dag upload`.
+
+> `tlessctl dag upload` is, still, not fully functional.
+
 #### Public Key Distribution
 
 How do ECFs in TLess are bootstrapped with the right keys?

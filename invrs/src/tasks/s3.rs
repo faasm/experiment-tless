@@ -1,5 +1,5 @@
-use bytes::Bytes;
 use crate::env::Env;
+use bytes::Bytes;
 use chrono::{DateTime, Utc};
 use futures_util::StreamExt;
 use log::{debug, error, info, warn};
@@ -325,7 +325,10 @@ impl S3 {
     }
 
     pub async fn upload_bytes(bucket_name: &str, s3_path: &str, bytes: &[u8]) {
-        debug!("tlessctl(s3): uploading {} bytes to {bucket_name}/{s3_path}", bytes.len());
+        debug!(
+            "tlessctl(s3): uploading {} bytes to {bucket_name}/{s3_path}",
+            bytes.len()
+        );
 
         let client = Self::init_s3_client();
 

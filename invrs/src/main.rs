@@ -51,7 +51,6 @@ enum DagCommand {
     },
 }
 
-
 #[derive(Debug, Subcommand)]
 enum DockerCommand {
     Build {
@@ -173,7 +172,7 @@ async fn main() {
         Command::Dag { dag_command } => match dag_command {
             DagCommand::Upload { name } => {
                 Dag::upload(name).await;
-            },
+            }
         },
         Command::Docker { docker_command } => match docker_command {
             DockerCommand::Build { ctr, push, nocache } => {

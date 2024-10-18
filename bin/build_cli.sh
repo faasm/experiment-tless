@@ -9,7 +9,7 @@ pushd ${PROJ_ROOT}>>/dev/null
 # Environment vars
 # ----------------------------
 
-VERSION=$(cat ${PROJ_ROOT}/VERSION)
+export VERSION=$(cat ${PROJ_ROOT}/VERSION)
 
 docker run \
     --rm -it \

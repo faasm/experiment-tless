@@ -1,3 +1,4 @@
+use bytes::Bytes;
 use crate::env::Env;
 use chrono::{DateTime, Utc};
 use futures_util::StreamExt;
@@ -321,6 +322,31 @@ impl S3 {
                 Err(e) => error!("invrs(s3): error: {:?}", e),
             }
         }
+    }
+
+    pub async fn upload_bytes(bucket_name: &str, s3_path: &str, bytes: &[u8]) {
+        debug!("tlessctl(s3): uploading {} bytes to {bucket_name}/{s3_path}", bytes.len());
+
+        let client = Self::init_s3_client();
+
+        let exists: bool = client
+            .bucket_exists(&BucketExistsArgs::new(&bucket_name).unwrap())
+            .await
+            .unwrap();
+
+        if !exists {
+            client
+                .make_bucket(&MakeBucketArgs::new(&bucket_name).unwrap())
+                .await
+                .unwrap();
+        }
+
+        let content = ObjectContent::from(Bytes::copy_from_slice(bytes));
+        client
+            .put_object_content(&bucket_name, &s3_path, content)
+            .send()
+            .await
+            .unwrap();
     }
 
     pub async fn upload_dir(bucket_name: String, host_path: String, s3_path: String) {

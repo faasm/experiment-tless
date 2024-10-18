@@ -37,12 +37,12 @@ bool on();
 // the function we are executing (i.e. us). This method is the main entrypoint
 // implementing the chaining validation protocol from the paper. For a
 // detailed explanation of the protocol, see the comment in the source file
-bool checkChain();
+bool checkChain(const std::string& workflow, const std::string& function, int id);
 
-#ifdef __faasm
 // Chain a function by name, and return the function id to wait-on
 int32_t chain(const std::string& funcName, const std::string& inputData);
 
+#ifdef __faasm
 // Wait for a function by its id, and get its output and return code
 std::pair<int, std::string> wait(int32_t functionId, bool ignoreOutput=false);
 #endif

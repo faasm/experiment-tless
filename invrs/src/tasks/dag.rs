@@ -70,8 +70,16 @@ impl Dag {
 
         let abe_ct_str = match serde_json::to_string(&ct) {
             Ok(ct_str) => ct_str,
-            Err(_) => panic!("tlessctl(dag): error encrypting certificate chain"),
+            Err(_) => panic!("tlessctl(dag): error serializing certificate chain"),
         };
+
+        // DELETE ME - upload plain-text version of CP-ABE
+        S3::upload_bytes(
+            "tless",
+            &format!("{wflow_name}/hello-cpabe"),
+            &abe_ct_str.clone().into_bytes(),
+        )
+        .await;
 
         // Encapsulate the cipher-text in a symmetric encryption payload
         let abe_ct_nonce = Aes256Gcm::generate_nonce(&mut OsRng);
@@ -84,7 +92,7 @@ impl Dag {
         // Upload it
         S3::upload_bytes(
             "tless",
-            &format!("{wflow_name}/inputs/splitter"),
+            &format!("{wflow_name}/cert-chain/splitter"),
             &encrypted_abe_ct,
         )
         .await;

@@ -17,7 +17,7 @@ docker run \
     --net host \
     -v ${PROJ_ROOT}/workflows:/code/faasm-examples/workflows \
     -w /code/faasm-examples \
-    ghcr.io/coco-serverless/tless-experiments:0.4.0 \
+    ghcr.io/coco-serverless/tless-experiments:${VERSION} \
     bash
 
 popd >> /dev/null

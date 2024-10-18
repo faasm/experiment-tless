@@ -4,9 +4,6 @@ Workflow based on the MapReduce [example](https://github.com/ddps-lab/serverless
 
 ![workflow diagram](./serverless_workflows_word_count.png)
 
-Assuming you have deployed one of the baselines of choice, you can run a execute
-run of the workflow following these steps.
-
 ## Run the Workflow (Faasm)
 
 To run the workflow, you must first upload the wikipedia dump to S3:

@@ -3,9 +3,8 @@ use aes_gcm::aead::{Aead, AeadCore, KeyInit, OsRng};
 use aes_gcm::{Aes256Gcm, Key};
 use rabe;
 
-// FIXME: symmetric key is currently hardcoded. In production it would be
-// given to the user upon registration
-// f00d482eca21fb13ecf00148ba6001766e56bba5ff9b119dd6fa96392b7c1a0d
+// FIXME(tless-prod): symmetric key is currently hardcoded. In production it
+// would be given to the user upon registration
 static DEMO_SYM_KEY: [u8; 32] = [
     0xf0, 0x0d, 0x48, 0x2e, 0xca, 0x21, 0xfb, 0x13, 0xec, 0xf0, 0x01, 0x48, 0xba, 0x60, 0x01, 0x76,
     0x6e, 0x56, 0xbb, 0xa5, 0xff, 0x9b, 0x11, 0x9d, 0xd6, 0xfa, 0x96, 0x39, 0x2b, 0x7c, 0x1a, 0x0d,
@@ -85,7 +84,7 @@ impl Dag {
         // Upload it
         S3::upload_bytes(
             "tless",
-            &format!("{wflow_name}/inbox/splitter"),
+            &format!("{wflow_name}/inputs/splitter"),
             &encrypted_abe_ct,
         )
         .await;

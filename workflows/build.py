@@ -40,6 +40,20 @@ def compile(wasm=False, native=False, debug=False):
             debug=False,
             is_threads=False,
         )
+    else:
+        cmake_cmd = [
+            "cmake",
+            "-GNinja",
+            "-DCMAKE_BUILD_TYPE={}".format("Debug" if debug else "Release"),
+            "-DCMAKE_C_COMPILER=/usr/bin/clang-17",
+            "-DCMAKE_CXX_COMPILER=/usr/bin/clang++-17",
+            WORKFLOWS_ROOT,
+        ]
+        cmake_cmd = " ".join(cmake_cmd)
+
+        run(cmake_cmd, shell=True, check=True, cwd=build_dir)
+        run("ninja tless_test_native", shell=True, check=True, cwd=build_dir)
+    return
 
     for wflow in WORKFLOWS:
         for function in WORKFLOWS[wflow]:
@@ -92,7 +106,7 @@ if __name__ == "__main__":
 
     # First, build the workflows
     compile(wasm=True, debug=debug)
-    # compile(native=True, debug=debug)
+    compile(native=True, debug=debug)
 
     # Second, build the driver function for Knative
     # compile_driver(debug=debug)

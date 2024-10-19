@@ -1,3 +1,4 @@
+use crate::tasks::dag::Dag;
 use crate::tasks::docker::{Docker, DockerContainer};
 use crate::tasks::eval::{Eval, EvalExperiment, EvalRunArgs};
 use crate::tasks::s3::S3;
@@ -19,6 +20,11 @@ struct Cli {
 
 #[derive(Debug, Subcommand)]
 enum Command {
+    /// Register and manage workflows expressed as DAGs
+    Dag {
+        #[command(subcommand)]
+        dag_command: DagCommand,
+    },
     /// Build and push different docker images
     Docker {
         #[command(subcommand)]
@@ -33,6 +39,15 @@ enum Command {
     S3 {
         #[command(subcommand)]
         s3_command: S3Command,
+    },
+}
+
+#[derive(Debug, Subcommand)]
+enum DagCommand {
+    Upload {
+        /// Name of the application to upload
+        name: String,
+        // TODO: missing path to JSON
     },
 }
 
@@ -154,6 +169,11 @@ async fn main() {
     }
 
     match &cli.task {
+        Command::Dag { dag_command } => match dag_command {
+            DagCommand::Upload { name } => {
+                Dag::upload(name).await;
+            }
+        },
         Command::Docker { docker_command } => match docker_command {
             DockerCommand::Build { ctr, push, nocache } => {
                 for c in ctr {

@@ -32,6 +32,18 @@ impl S3Data {
     const BUCKET: S3Data = S3Data { data: "tless" };
 }
 
+pub fn get_tless_mode() -> String {
+    match env::var("TLESS_MODE") {
+        Ok(value) => {
+            match value.as_str() {
+                "on" => "on".to_string(),
+                _ => "off".to_string(),
+            }
+        }
+        _ => "off".to_string(),
+    }
+}
+
 pub async fn wait_for_key(key_name: &str) {
     let base_url = format!("http://{}:{}", S3Data::HOST.data, S3Data::PORT.data)
         .parse::<BaseUrl>()
@@ -125,6 +137,7 @@ pub fn process_event(mut event: Event) -> Event {
                 .env("S3_PASSWORD", S3Data::PASSWORD.data)
                 .env("S3_PORT", S3Data::PORT.data)
                 .env("S3_USER", S3Data::USER.data)
+                .env("TLESS_MODE", get_tless_mode())
                 .stdout(Stdio::inherit())
                 .stderr(Stdio::inherit())
                 .arg("finra/yfinance.csv")
@@ -151,6 +164,7 @@ pub fn process_event(mut event: Event) -> Event {
                 .env("S3_PASSWORD", S3Data::PASSWORD.data)
                 .env("S3_PORT", S3Data::PORT.data)
                 .env("S3_USER", S3Data::USER.data)
+                .env("TLESS_MODE", get_tless_mode())
                 .stdout(Stdio::inherit())
                 .stderr(Stdio::inherit())
                 .output()
@@ -189,6 +203,7 @@ pub fn process_event(mut event: Event) -> Event {
                 .env("S3_PASSWORD", S3Data::PASSWORD.data)
                 .env("S3_PORT", S3Data::PORT.data)
                 .env("S3_USER", S3Data::USER.data)
+                .env("TLESS_MODE", get_tless_mode())
                 .arg(audit_id.to_string())
                 .arg("finra/outputs/fetch-public/trades")
                 .arg("finra/outputs/fetch-private/portfolio")
@@ -229,6 +244,7 @@ pub fn process_event(mut event: Event) -> Event {
                     .env("S3_PASSWORD", S3Data::PASSWORD.data)
                     .env("S3_PORT", S3Data::PORT.data)
                     .env("S3_USER", S3Data::USER.data)
+                    .env("TLESS_MODE", get_tless_mode())
                     .stdout(Stdio::inherit())
                     .stderr(Stdio::inherit())
                     .output()
@@ -288,6 +304,11 @@ pub fn process_event(mut event: Event) -> Event {
                     event.ty(),
                 );
                 post_event(event.ty().to_string(), scaled_event.clone());
+
+                // Be gentle when scaling-up, as otherwise SEV will take too
+                // long
+                println!("{WORKFLOW_NAME}: sleeping for a bit...");
+                thread::sleep(time::Duration::from_secs(3));
             }
 
             // Update the event for the zero-th id (the one we return as part

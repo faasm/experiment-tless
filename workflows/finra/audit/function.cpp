@@ -12,6 +12,7 @@ extern "C"
 #include "libs/s3/S3Wrapper.hpp"
 #endif
 
+#include "tless.h"
 #include "trade.h"
 
 #include <iostream>
@@ -75,6 +76,11 @@ int main(int argc, char** argv)
     s3::S3Wrapper s3cli;
 #endif
     std::string us = "audit-" + std::to_string(id);
+
+    if (!tless::checkChain("finra", "audit", id)) {
+        std::cerr << "finra(" << us << "): error checking TLess chain" << std::endl;
+        return 1;
+    }
 
     std::cout << "finra(" << us << "): fetching public trades data from "
               << tradesKey

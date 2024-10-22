@@ -1,0 +1,11 @@
+funcs:
+  - name: partition
+    scale: 1
+    chains_to: pca
+  - name: pca
+    scale: 2
+    chains_to: rf
+  - name: rf
+    scale: 8
+  - name: validation
+    scale: 1

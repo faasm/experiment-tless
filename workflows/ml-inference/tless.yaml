@@ -1,0 +1,9 @@
+funcs:
+  - name: partition
+    scale: 1
+    chains_to: predict
+  - name: load
+    scale: 1
+    chains_to: predict
+  - name: predict
+    scale: 16

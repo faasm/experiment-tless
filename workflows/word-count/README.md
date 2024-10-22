@@ -41,6 +41,7 @@ faasmctl invoke word-count driver --cmdline "word-count/few-files"
 First, deploy the workflow to the k8s cluster with bare-metal access to SEV nodes:
 
 ```bash
+export TLESS_MODE=on
 export RUNTIME_CLASS_NAME=kata-qemu-sev
 export TLESS_VERSION=$(cat ${PROJ_ROOT}/VERSION)
 

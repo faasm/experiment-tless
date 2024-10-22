@@ -12,6 +12,8 @@ extern "C"
 #include "libs/s3/S3Wrapper.hpp"
 #endif
 
+#include "tless.h"
+
 #include <iostream>
 #include <string>
 #include <string_view>
@@ -60,6 +62,11 @@ int main(int argc, char** argv)
     // TODO: the bucket name is currently hardcoded
     std::string bucketName = "tless";
     std::string s3prefix;
+
+    if (!tless::checkChain("ml-training", "validation", 0)) {
+        std::cerr << "ml-training(validation): error checking TLess chain" << std::endl;
+        return 1;
+    }
 
 #ifdef __faasm
     // Get the object key as an input

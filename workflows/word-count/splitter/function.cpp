@@ -8,10 +8,12 @@ extern "C"
 #else
 #include <cstdlib>
 #include <fstream>
-#include <iostream>
 #include "libs/s3/S3Wrapper.hpp"
 #endif
 
+#include "tless.h"
+
+#include <iostream>
 #include <stdio.h>
 #include <string>
 #include <vector>
@@ -26,6 +28,11 @@ extern "C"
  */
 int main(int argc, char** argv)
 {
+    if (!tless::checkChain("word-count", "splitter", 0)) {
+        std::cerr << "word-count(splitter): error checking TLess chain" << std::endl;
+        return 1;
+    }
+
     // TODO: the bucket name is currently hardcoded
     std::string bucketName = "tless";
     std::string s3dir;
@@ -97,9 +104,12 @@ int main(int argc, char** argv)
     for (int i = 0; i < s3files.size(); i++) {
         auto s3file = s3files.at(i);
 #ifdef __faasm
-        printf("word-count(splitter): chaining to mapper with file %s\n", s3file.c_str());
+        std::cout << "word-count(splitter): chaining to mapper (" << i << ")"
+                  << " with file "
+                  << s3file
+                  << std::endl;
         std::string mapperInput = std::to_string(i) + ":" + s3file;
-        int splitterId = faasmChainNamed("mapper", (uint8_t*) mapperInput.c_str(), mapperInput.size());
+        int splitterId = tless::chain("word-count", "splitter", 0, "mapper", i, mapperInput);
         splitterCallIds.push_back(splitterId);
 #else
         std::cout << "file: " << s3file << std::endl;

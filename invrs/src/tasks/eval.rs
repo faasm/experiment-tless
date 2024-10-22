@@ -13,7 +13,7 @@ use shell_words;
 use std::path::PathBuf;
 use std::process::{Command, Stdio};
 use std::str::FromStr;
-use std::{collections::BTreeMap, env, fmt, fs, io::Write, thread, time};
+use std::{collections::BTreeMap, env, fmt, fs, io::Write, str, thread, time};
 
 static EVAL_BUCKET_NAME: &str = "tless";
 
@@ -83,12 +83,14 @@ impl EvalBaseline {
 
 pub enum EvalExperiment {
     E2eLatency,
+    E2eLatencyCold,
 }
 
 impl fmt::Display for EvalExperiment {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             EvalExperiment::E2eLatency => write!(f, "e2e-latency"),
+            EvalExperiment::E2eLatencyCold => write!(f, "e2e-latency-cold"),
         }
     }
 }
@@ -140,7 +142,7 @@ impl Eval {
             .expect("invrs(eval): failed to write to file");
 
         match exp {
-            EvalExperiment::E2eLatency => {
+            EvalExperiment::E2eLatency | EvalExperiment::E2eLatencyCold => {
                 writeln!(file, "Run,TimeMs").expect("invrs(eval): failed to write to file");
             }
         }
@@ -160,7 +162,7 @@ impl Eval {
             .expect("invrs(eval): failed to write to file");
 
         match exp {
-            EvalExperiment::E2eLatency => {
+            EvalExperiment::E2eLatency | EvalExperiment::E2eLatencyCold => {
                 let duration: Duration = result.end_time - result.start_time;
                 writeln!(file, "{},{}", result.iter, duration.num_milliseconds())
                     .expect("invrs(eval): failed to write to file");
@@ -188,7 +190,7 @@ impl Eval {
         num_repeats: u64,
         exp: &EvalExperiment,
         baseline: &EvalBaseline,
-        workflow: &AvailableWorkflow,
+        workflow: &str,
     ) -> ProgressBar {
         let pb = ProgressBar::new(num_repeats);
         pb.set_style(
@@ -307,6 +309,12 @@ impl Eval {
                     },
                 ),
                 ("TLESS_VERSION", &Env::get_version().unwrap()),
+                ("TLESS_MODE",
+                match baseline {
+                    EvalBaseline::Knative | EvalBaseline::CcKnative => "off",
+                    EvalBaseline::TlessKnative => "on",
+                    _ => panic!("woops"),
+                }),
             ]),
         );
 
@@ -369,7 +377,15 @@ impl Eval {
                     EvalBaseline::CcKnative | EvalBaseline::TlessKnative => "kata-qemu-sev",
                     _ => panic!("woops"),
                 },
-            )]),
+                ),
+                ("TLESS_VERSION", &Env::get_version().unwrap()),
+                ("TLESS_MODE",
+                match baseline {
+                    EvalBaseline::Knative | EvalBaseline::CcKnative => "off",
+                    EvalBaseline::TlessKnative => "on",
+                    _ => panic!("woops"),
+                }),
+            ]),
         );
 
         let mut kubectl = Command::new(Self::get_kubectl_cmd())
@@ -394,14 +410,12 @@ impl Eval {
         kubectl
             .wait_with_output()
             .expect("invrs(eval): failed to run kubectl command");
+    }
 
-        // Sometimes the --cascade argument is not enough for all pods to
-        // have fully disappeared, we also wait until there's only one pod
-        // (minio) left
-        /*
+    async fn wait_for_scale_to_zero() {
         loop {
             let output = Self::run_kubectl_cmd(&format!("-n tless get pods -o jsonpath={{..status.conditions[?(@.type==\"Ready\")].status}}"));
-            println!("output: {output}");
+            debug!("tlessctl: waiting for a scale-down: out: {output}");
             let values: Vec<&str> = output.split_whitespace().collect();
 
             if values.len() == 1 {
@@ -410,11 +424,10 @@ impl Eval {
 
             thread::sleep(time::Duration::from_secs(2));
         }
-        */
     }
 
     /// Run workflow once, and return result depending on the experiment
-    async fn run_workflow_once(workflow: &AvailableWorkflow) -> ExecutionResult {
+    async fn run_workflow_once(workflow: &AvailableWorkflow, exp: &EvalExperiment) -> ExecutionResult {
         let mut exp_result = ExecutionResult {
             start_time: Utc::now(),
             end_time: Utc::now(),
@@ -426,9 +439,23 @@ impl Eval {
         trigger_cmd.push(format!("{workflow}"));
         trigger_cmd.push("knative");
         trigger_cmd.push("curl_cmd.sh");
-        Command::new(trigger_cmd)
+        let output = Command::new(trigger_cmd.clone())
             .output()
             .expect("invrs(eval): failed to execute trigger command");
+
+        match output.status.code() {
+                Some(0) => {
+                    debug!("{trigger_cmd:?}: executed succesfully");
+                }
+                Some(code) => {
+                    let stderr = str::from_utf8(&output.stderr).unwrap_or("tlessctl(eval): failed to get stderr");
+                    panic!("{trigger_cmd:?}: exited with error (code: {code}): {stderr}");
+                }
+                None => {
+                    let stderr = str::from_utf8(&output.stderr).unwrap_or("tlessctl(eval): failed to get stderr");
+                    panic!("{trigger_cmd:?}: failed: {stderr}");
+                }
+            };
 
         // Specific per-workflow completion detection
         match workflow {
@@ -504,6 +531,18 @@ impl Eval {
             }
         }
 
+        // Common-clean-up
+        S3::clear_dir(EVAL_BUCKET_NAME.to_string(), "{workflow}/exec-tokens".to_string()).await;
+
+        // Per-experiment, per-workflow clean-up
+        match exp {
+            EvalExperiment::E2eLatencyCold => {
+                debug!("tlesssctl: {exp}: waiting for scale-to-zero...");
+                Self::wait_for_scale_to_zero().await;
+            },
+            _ => debug!("tlessctl: {exp}: noting to clean-up after single execution"),
+        }
+
         // Cautionary sleep between runs
         thread::sleep(time::Duration::from_secs(5));
 
@@ -530,18 +569,23 @@ impl Eval {
         // Upload the state for all workflows
         // TODO: add progress bar
         // TODO: consider re-using between baselines
-        // Workflows::upload_workflow(EVAL_BUCKET_NAME, true).await;
-        Workflows::upload_workflow_state(&AvailableWorkflow::MlInference, EVAL_BUCKET_NAME, true)
-            .await;
+        // Workflows::upload_workflow_state(&AvailableWorkflow::MlInference, EVAL_BUCKET_NAME, true).await;
+        let pb = Self::get_progress_bar(
+            AvailableWorkflow::iter_variants().len().try_into().unwrap(), exp, &baseline, "state");
+        for workflow in AvailableWorkflow::iter_variants() {
+            Workflows::upload_workflow_state(workflow, EVAL_BUCKET_NAME, true).await;
+            pb.inc(1);
+        }
+        pb.finish();
 
         // Execute each workload individually
-        for workflow in vec![&AvailableWorkflow::MlInference] {
-            // AvailableWorkflow::iter_variants() {
+        // for workflow in vec![&AvailableWorkflow::MlInference] {
+        for workflow in AvailableWorkflow::iter_variants() {
             // Initialise result file
             Self::init_data_file(workflow, &exp, &baseline);
 
             // Prepare progress bar for each different experiment
-            let pb = Self::get_progress_bar(args.num_repeats.into(), exp, &baseline, workflow);
+            let pb = Self::get_progress_bar(args.num_repeats.into(), exp, &baseline, format!("{workflow}").as_str());
 
             // Deploy workflow
             Self::deploy_workflow(workflow, &baseline);
@@ -550,12 +594,14 @@ impl Eval {
 
             // Do warm-up rounds
             for _ in 0..args.num_warmup_repeats {
-                Self::run_workflow_once(workflow).await;
+                Self::run_workflow_once(workflow, exp).await;
+                S3::clear_dir(EVAL_BUCKET_NAME.to_string(), format!("{workflow}/exec-tokens")).await;
             }
 
             // Do actual experiment
             for i in 0..args.num_repeats {
-                let mut result = Self::run_workflow_once(workflow).await;
+                let mut result = Self::run_workflow_once(workflow, exp).await;
+                S3::clear_dir(EVAL_BUCKET_NAME.to_string(), format!("{workflow}/exec-tokens")).await;
                 result.iter = i;
                 Self::write_result_to_file(workflow, &exp, &baseline, &result);
 
@@ -631,9 +677,14 @@ impl Eval {
             _ => panic!("invrs(eval): should not be here"),
         };
 
-        unsafe {
-            env::set_var("FAASM_WASM_VM", wasm_vm);
-        }
+        let tless_enabled = match baseline {
+            EvalBaseline::Faasm | EvalBaseline::SgxFaasm => "off",
+            EvalBaseline::TlessFaasm => "on",
+            _ => panic!("invrs(eval): should not be here"),
+        };
+
+        env::set_var("FAASM_WASM_VM", wasm_vm);
+        env::set_var("TLESS_ENABLED", tless_enabled);
         // TODO: uncomment when deploying on k8s
         // Self::run_faasmctl_cmd("deploy.k8s --workers=4");
 
@@ -644,17 +695,37 @@ impl Eval {
             env::set_var("MINIO_URL", minio_url);
         }
 
+        async fn cleanup_single_execution(workflow: &AvailableWorkflow, exp: &EvalExperiment) {
+            S3::clear_dir(EVAL_BUCKET_NAME.to_string(), format!("{workflow}/exec-tokens")).await;
+
+            match exp {
+                EvalExperiment::E2eLatencyCold => {
+                    debug!("Flushing Faasm workers and sleeping...");
+                    Eval::run_faasmctl_cmd("flush.workers");
+                    thread::sleep(time::Duration::from_secs(2));
+                },
+                _ => debug!("nothing to do"),
+            }
+        }
+
         // Upload the state for all workflows
-        // TODO: uncomment me in a real deployment
-        // TODO: add progress bar
-        // TODO: consider sharing if we have multiple baselines/workflows
-        // Workflows::upload_state(EVAL_BUCKET_NAME, true).await;
+        // TODO: undo me
+        let pb = Self::get_progress_bar(
+            AvailableWorkflow::iter_variants().len().try_into().unwrap(), exp, &baseline, "state");
+        // for workflow in vec![&AvailableWorkflow::WordCount] {
+        for workflow in AvailableWorkflow::iter_variants() {
+            Workflows::upload_workflow_state(workflow, EVAL_BUCKET_NAME, true).await;
+            pb.inc(1);
+        }
+        pb.finish();
 
         // Upload the WASM files for all workflows
         // TODO: add progress bar
-        Self::upload_wasm();
+        // Self::upload_wasm();
 
         // Invoke each workflow
+        // UNDO ME
+        // for workflow in vec![&AvailableWorkflow::WordCount] {
         for workflow in AvailableWorkflow::iter_variants() {
             let faasm_cmdline = Workflows::get_faasm_cmdline(workflow);
 
@@ -662,7 +733,7 @@ impl Eval {
             Self::init_data_file(workflow, &exp, &baseline);
 
             // Prepare progress bar for each different experiment
-            let pb = Self::get_progress_bar(args.num_repeats.into(), exp, &baseline, workflow);
+            let pb = Self::get_progress_bar(args.num_repeats.into(), exp, &baseline, format!("{workflow}").as_str());
 
             let faasmctl_cmd = format!(
                 "invoke {workflow} driver --cmdline \"{faasm_cmdline}\" --output-format start-end-ts"
@@ -670,6 +741,7 @@ impl Eval {
             // Do warm-up rounds
             for _ in 0..args.num_warmup_repeats {
                 Self::run_faasmctl_cmd(&faasmctl_cmd);
+                cleanup_single_execution(workflow, exp).await;
             }
 
             // Do actual experiment
@@ -685,6 +757,9 @@ impl Eval {
                 };
 
                 Self::write_result_to_file(workflow, &exp, &baseline, &result);
+
+                // Clean-up
+                cleanup_single_execution(workflow, exp).await;
 
                 pb.inc(1);
             }
@@ -718,7 +793,7 @@ impl Eval {
         }
     }
 
-    fn plot_e2e_latency(data_files: &Vec<PathBuf>) {
+    fn plot_e2e_latency(exp: &EvalExperiment, data_files: &Vec<PathBuf>) {
         #[derive(Debug, Deserialize)]
         #[serde(rename_all = "PascalCase")]
         struct Record {
@@ -783,9 +858,9 @@ impl Eval {
 
         let mut plot_path = env::current_dir().expect("invrs: failed to get current directory");
         plot_path.push("eval");
-        plot_path.push(format!("{}", EvalExperiment::E2eLatency));
+        plot_path.push(format!("{exp}"));
         plot_path.push("plots");
-        plot_path.push("e2e_latency.svg");
+        plot_path.push(format!("{}.svg", exp.to_string().replace("-", "_")));
 
         // Plot data
         let root = SVGBackend::new(&plot_path, (800, 300)).into_drawing_area();
@@ -969,7 +1044,10 @@ impl Eval {
 
         match exp {
             EvalExperiment::E2eLatency => {
-                Self::plot_e2e_latency(&data_files);
+                Self::plot_e2e_latency(&exp, &data_files);
+            }
+            EvalExperiment::E2eLatencyCold => {
+                Self::plot_e2e_latency(&exp, &data_files);
             }
         }
     }

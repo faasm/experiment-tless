@@ -56,6 +56,9 @@ spec:
             - containerPort: 8080
           workingDir: /workflows/word-count/knative
           command: [ "./target/release/tless-cloudevent-handler" ]
+          env:
+            - name: TLESS_MODE
+              value: "${TLESS_MODE}"
     metadata:
       labels:
         tless.workflows/name: word-count-splitter
@@ -91,7 +94,7 @@ spec:
               # should stick to specifying the image via tag digest. Eventually,
               # we can move to a pinned tag
               # image: ghcr.io/coco-serverless/tless-knative-worker:${TLESS_VERSION}
-              image: ghcr.io/coco-serverless/tless-knative-worker@sha256:c6e577ddc93f7338582a63fc5191d1b3e94879f4c42e5fd00c20ca393eeb0b5c
+              image: ghcr.io/coco-serverless/tless-knative-worker@sha256:b88d473092ecd6f98c59717223717129fc249df04556377b24224b3349fc7495
               ports:
                 - containerPort: 8080
               workingDir: /workflows/word-count/knative
@@ -99,6 +102,8 @@ spec:
               env:
                 - name: CE_FROM_FILE
                   value: "on"
+                - name: TLESS_MODE
+                  value: "${TLESS_MODE}"
         metadata:
           labels:
             tless.workflows/name: word-count-mapper
@@ -124,6 +129,9 @@ spec:
             - containerPort: 8080
           workingDir: /workflows/word-count/knative
           command: [ "./target/release/tless-cloudevent-handler" ]
+          env:
+            - name: TLESS_MODE
+              value: "${TLESS_MODE}"
     metadata:
       labels:
         tless.workflows/name: word-count-reducer

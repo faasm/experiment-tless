@@ -29,6 +29,18 @@ impl S3Data {
     const BUCKET: S3Data = S3Data { data: "tless" };
 }
 
+pub fn get_tless_mode() -> String {
+    match env::var("TLESS_MODE") {
+        Ok(value) => {
+            match value.as_str() {
+                "on" => "on".to_string(),
+                _ => "off".to_string(),
+            }
+        }
+        _ => "off".to_string(),
+    }
+}
+
 pub async fn get_num_keys(prefix: &str) -> i64 {
     let base_url = format!("http://{}:{}", S3Data::HOST.data, S3Data::PORT.data)
         .parse::<BaseUrl>()
@@ -190,6 +202,7 @@ pub fn process_event(mut event: Event) -> Event {
                 .env("S3_PASSWORD", S3Data::PASSWORD.data)
                 .env("S3_PORT", S3Data::PORT.data)
                 .env("S3_USER", S3Data::USER.data)
+                .env("TLESS_MODE", get_tless_mode())
                 .stdout(Stdio::inherit())
                 .stderr(Stdio::inherit())
                 .arg(data_dir)
@@ -230,6 +243,7 @@ pub fn process_event(mut event: Event) -> Event {
                 .env("S3_PASSWORD", S3Data::PASSWORD.data)
                 .env("S3_PORT", S3Data::PORT.data)
                 .env("S3_USER", S3Data::USER.data)
+                .env("TLESS_MODE", get_tless_mode())
                 .arg(model_dir)
                 .stdout(Stdio::inherit())
                 .stderr(Stdio::inherit())
@@ -270,6 +284,7 @@ pub fn process_event(mut event: Event) -> Event {
                 .env("S3_PASSWORD", S3Data::PASSWORD.data)
                 .env("S3_PORT", S3Data::PORT.data)
                 .env("S3_USER", S3Data::USER.data)
+                .env("TLESS_MODE", get_tless_mode())
                 .arg(inf_id.to_string())
                 .arg("ml-inference/outputs/load/rf-")
                 .arg(format!("ml-inference/outputs/partition/inf-{inf_id}"))

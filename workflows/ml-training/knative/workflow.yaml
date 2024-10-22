@@ -63,6 +63,9 @@ spec:
             - containerPort: 8080
           workingDir: /workflows/ml-training/knative
           command: [ "./target/release/tless-cloudevent-handler" ]
+          env:
+            - name: TLESS_MODE
+              value: "${TLESS_MODE}"
     metadata:
       labels:
         tless.workflows/name: ml-training-partition
@@ -92,7 +95,7 @@ spec:
             - name: main
               # TODO: pin to version
               # image: ghcr.io/coco-serverless/tless-knative-worker:${TLESS_VERSION}
-              image: ghcr.io/coco-serverless/tless-knative-worker@sha256:a3fbf2d41de8fc3c7ed2dc104839fc968a750b6a120874a4ec6cec5de0b1b457
+              image: ghcr.io/coco-serverless/tless-knative-worker@sha256:cce4af6db86034d5dc8f2e27cd067b2399846e91b978e52ebe0456fcc12bcfe9
               ports:
                 - containerPort: 8080
               workingDir: /workflows/ml-training/knative
@@ -100,6 +103,8 @@ spec:
               env:
                 - name: CE_FROM_FILE
                   value: "on"
+                - name: TLESS_MODE
+                  value: "${TLESS_MODE}"
         metadata:
           labels:
             tless.workflows/name: ml-training-pca
@@ -129,7 +134,7 @@ spec:
             - name: main
               # TODO: pin to version
               # image: ghcr.io/coco-serverless/tless-knative-worker:${TLESS_VERSION}
-              image: ghcr.io/coco-serverless/tless-knative-worker@sha256:a3fbf2d41de8fc3c7ed2dc104839fc968a750b6a120874a4ec6cec5de0b1b457
+              image: ghcr.io/coco-serverless/tless-knative-worker@sha256:cce4af6db86034d5dc8f2e27cd067b2399846e91b978e52ebe0456fcc12bcfe9
               ports:
                 - containerPort: 8080
               workingDir: /workflows/ml-training/knative
@@ -137,6 +142,8 @@ spec:
               env:
                 - name: CE_FROM_FILE
                   value: "on"
+                - name: TLESS_MODE
+                  value: "${TLESS_MODE}"
         metadata:
           labels:
             tless.workflows/name: ml-training-rf
@@ -160,6 +167,9 @@ spec:
             - containerPort: 8080
           workingDir: /workflows/ml-training/knative
           command: [ "./target/release/tless-cloudevent-handler" ]
+          env:
+            - name: TLESS_MODE
+              value: "${TLESS_MODE}"
     metadata:
       labels:
         tless.workflows/name: ml-training-validation

@@ -12,6 +12,8 @@ extern "C"
 #include "libs/s3/S3Wrapper.hpp"
 #endif
 
+#include "tless.h"
+
 #include <iostream>
 #include <string>
 #include <string_view>
@@ -51,6 +53,11 @@ std::string join(const std::vector<std::string>& stringList, const std::string& 
  */
 int main(int argc, char** argv)
 {
+    if (!tless::checkChain("ml-inference", "load", 0)) {
+        std::cerr << "ml-inference(load): error checking TLess chain" << std::endl;
+        return 1;
+    }
+
     // TODO: the bucket name is currently hardcoded
     std::string bucketName = "tless";
     std::string s3prefix;
@@ -61,7 +68,7 @@ int main(int argc, char** argv)
     char inputChar[inputSize];
     faasmGetInput((uint8_t*)inputChar, inputSize);
 
-    s3prefix.assign(inputChar);
+    s3prefix.assign(inputChar, inputChar + inputSize);
 #else
     if (argc != 2) {
         std::cerr << "ml-inference(load): error parsing driver input" << std::endl;

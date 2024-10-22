@@ -1,0 +1,16 @@
+[package]
+name = "host"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+edag-verify-core = { path = "../core" }
+methods = { path = "../methods" }
+
+k256 = { version = "0.13", features = ["serde"] }
+rand_core = "0.6.4"
+risc0-zkvm = { version = "1.1.2" }
+serde = "1.0"
+serde_json = "^1.0"
+serde_yaml = "0.9"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }

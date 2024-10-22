@@ -1,6 +1,8 @@
+use crate::tasks::dag::Dag;
 use crate::tasks::docker::{Docker, DockerContainer};
 use crate::tasks::eval::{Eval, EvalExperiment, EvalRunArgs};
 use crate::tasks::s3::S3;
+use crate::tasks::ubench::{MicroBenchmarks, Ubench, UbenchRunArgs};
 use clap::{Parser, Subcommand};
 use env_logger;
 
@@ -19,6 +21,11 @@ struct Cli {
 
 #[derive(Debug, Subcommand)]
 enum Command {
+    /// Register and manage workflows expressed as DAGs
+    Dag {
+        #[command(subcommand)]
+        dag_command: DagCommand,
+    },
     /// Build and push different docker images
     Docker {
         #[command(subcommand)]
@@ -29,10 +36,25 @@ enum Command {
         #[command(subcommand)]
         eval_command: EvalCommand,
     },
+    /// Run microbenchmark
+    Ubench {
+        #[command(subcommand)]
+        ubench_command: UbenchCommand,
+    },
     /// Interact with an S3 (MinIO server)
     S3 {
         #[command(subcommand)]
         s3_command: S3Command,
+    },
+}
+
+#[derive(Debug, Subcommand)]
+enum DagCommand {
+    Upload {
+        /// Name of the application to upload
+        name: String,
+        /// Path to the YAML file describing the workflow
+        yaml_path: String,
     },
 }
 
@@ -69,6 +91,28 @@ enum EvalCommand {
         #[command(subcommand)]
         eval_sub_command: EvalSubCommand,
     },
+    /// Evaluate end-to-end execution latency (cold) for different workflows
+    E2eLatencyCold {
+        #[command(subcommand)]
+        eval_sub_command: EvalSubCommand,
+    },
+}
+
+#[derive(Debug, Subcommand)]
+enum UbenchCommand {
+    /// Microbenchmark to measure the time to verify an eDAG
+    VerifyEdag {
+        #[command(subcommand)]
+        ubench_sub_command: UbenchSubCommand,
+    }
+}
+
+#[derive(Debug, Subcommand)]
+enum UbenchSubCommand {
+    /// Run
+    Run(UbenchRunArgs),
+    /// Plot
+    Plot {},
 }
 
 #[derive(Debug, Subcommand)]
@@ -154,6 +198,11 @@ async fn main() {
     }
 
     match &cli.task {
+        Command::Dag { dag_command } => match dag_command {
+            DagCommand::Upload { name, yaml_path } => {
+                Dag::upload(name, yaml_path).await;
+            }
+        },
         Command::Docker { docker_command } => match docker_command {
             DockerCommand::Build { ctr, push, nocache } => {
                 for c in ctr {
@@ -180,6 +229,24 @@ async fn main() {
                     Eval::plot(&EvalExperiment::E2eLatency);
                 }
             },
+            EvalCommand::E2eLatencyCold { eval_sub_command } => match eval_sub_command {
+                EvalSubCommand::Run(run_args) => {
+                    Eval::run(&EvalExperiment::E2eLatencyCold, run_args).await;
+                }
+                EvalSubCommand::Plot {} => {
+                    Eval::plot(&EvalExperiment::E2eLatencyCold);
+                }
+            },
+        },
+        Command::Ubench { ubench_command} => match ubench_command {
+            UbenchCommand::VerifyEdag { ubench_sub_command } => match ubench_sub_command {
+                UbenchSubCommand::Run(run_args) => {
+                    Ubench::run(&MicroBenchmarks::VerifyEDag, run_args);
+                }
+                UbenchSubCommand::Plot {} => {
+                    Ubench::plot(&MicroBenchmarks::VerifyEDag);
+                }
+            }
         },
         // FIXME: move all S3 methods to &str
         Command::S3 { s3_command } => match s3_command {

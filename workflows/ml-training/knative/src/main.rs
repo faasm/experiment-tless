@@ -33,6 +33,18 @@ impl S3Data {
     const BUCKET: S3Data = S3Data { data: "tless" };
 }
 
+pub fn get_tless_mode() -> String {
+    match env::var("TLESS_MODE") {
+        Ok(value) => {
+            match value.as_str() {
+                "on" => "on".to_string(),
+                _ => "off".to_string(),
+            }
+        }
+        _ => "off".to_string(),
+    }
+}
+
 // We must wait for the POST event to go through before we can return, as
 // otherwise the chain may not make progress
 pub fn post_event(dest: String, event: Event) -> JoinHandle<()> {
@@ -96,6 +108,7 @@ pub fn process_event(mut event: Event) -> Event {
                 .env("S3_PASSWORD", S3Data::PASSWORD.data)
                 .env("S3_PORT", S3Data::PORT.data)
                 .env("S3_USER", S3Data::USER.data)
+                .env("TLESS_MODE", get_tless_mode())
                 .stdout(Stdio::inherit())
                 .stderr(Stdio::inherit())
                 .arg(data_dir)
@@ -146,6 +159,7 @@ pub fn process_event(mut event: Event) -> Event {
                 .env("S3_PASSWORD", S3Data::PASSWORD.data)
                 .env("S3_PORT", S3Data::PORT.data)
                 .env("S3_USER", S3Data::USER.data)
+                .env("TLESS_MODE", get_tless_mode())
                 .arg(pca_id.to_string())
                 .arg(format!("ml-training/outputs/partition/pca-{pca_id}"))
                 .arg(((num_train_funcs / num_pca_funcs) as i64).to_string())
@@ -193,6 +207,7 @@ pub fn process_event(mut event: Event) -> Event {
                 .env("S3_PASSWORD", S3Data::PASSWORD.data)
                 .env("S3_PORT", S3Data::PORT.data)
                 .env("S3_USER", S3Data::USER.data)
+                .env("TLESS_MODE", get_tless_mode())
                 .arg(pca_id.to_string())
                 .arg(rf_id.to_string())
                 .arg(format!("ml-training/outputs/pca-{pca_id}/rf-{rf_id}-data"))
@@ -243,6 +258,7 @@ pub fn process_event(mut event: Event) -> Event {
                     .env("S3_PASSWORD", S3Data::PASSWORD.data)
                     .env("S3_PORT", S3Data::PORT.data)
                     .env("S3_USER", S3Data::USER.data)
+                    .env("TLESS_MODE", get_tless_mode())
                     .arg("ml-training/outputs/rf-")
                     .stdout(Stdio::inherit())
                     .stderr(Stdio::inherit())

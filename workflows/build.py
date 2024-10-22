@@ -1,6 +1,7 @@
 from faasmtools.compile_util import wasm_cmake, wasm_copy_upload
-from os import makedirs
+from os import environ, makedirs
 from os.path import dirname, exists, join, realpath
+from shutil import rmtree
 from subprocess import run
 from sys import argv
 
@@ -28,6 +29,30 @@ def compile(wasm=False, native=False, debug=False):
 
     if not exists(build_dir):
         makedirs(build_dir)
+
+    # TODO: remove me just testing
+    if wasm:
+        wasm_cmake(
+            WORKFLOWS_ROOT,
+            build_dir,
+            "tless_test",
+            clean=False,
+            debug=False,
+            is_threads=False,
+        )
+    else:
+        cmake_cmd = [
+            "cmake",
+            "-GNinja",
+            "-DCMAKE_BUILD_TYPE={}".format("Debug" if debug else "Release"),
+            "-DCMAKE_C_COMPILER=/usr/bin/clang-17",
+            "-DCMAKE_CXX_COMPILER=/usr/bin/clang++-17",
+            WORKFLOWS_ROOT,
+        ]
+        cmake_cmd = " ".join(cmake_cmd)
+
+        run(cmake_cmd, shell=True, check=True, cwd=build_dir)
+        run("ninja tless_test_native", shell=True, check=True, cwd=build_dir)
 
     for wflow in WORKFLOWS:
         for function in WORKFLOWS[wflow]:
@@ -74,6 +99,9 @@ if __name__ == "__main__":
     debug = False
     if len(argv) == 2 and argv[1] == "--debug":
         debug = True
+    elif len(argv) == 2 and argv[1] == "--clean":
+        rmtree(join(WORKFLOWS_ROOT, "build-native"), ignore_errors=True)
+        rmtree(join(WORKFLOWS_ROOT, "build-wasm"), ignore_errors=True)
 
     # First, build the workflows
     compile(wasm=True, debug=debug)

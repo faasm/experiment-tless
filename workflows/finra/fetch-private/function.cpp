@@ -12,6 +12,7 @@ extern "C"
 #include "libs/s3/S3Wrapper.hpp"
 #endif
 
+#include "tless.h"
 #include "trade.h"
 
 #include <iostream>
@@ -34,6 +35,11 @@ Portfolio portfolio = {
  */
 int main(int argc, char** argv)
 {
+    if (!tless::checkChain("finra", "fetch-private", 0)) {
+        std::cerr << "finra(fetch-private): error checking TLess chain" << std::endl;
+        return 1;
+    }
+
     // TODO: the bucket name is currently hardcoded
     std::string bucketName = "tless";
 

@@ -30,6 +30,8 @@ extern "C"
 #include "libs/s3/S3Wrapper.hpp"
 #endif
 
+#include "tless.h"
+
 #include <filesystem>
 #include <iostream>
 #include <opencv2/opencv.hpp>
@@ -224,6 +226,11 @@ int main(int argc, char** argv) {
 #endif
     std::string us = "pca-" + std::to_string(id);
 
+    if (!tless::checkChain("ml-training", "pca", id)) {
+        std::cerr << "ml-training(" << us << "): error checking TLess chain" << std::endl;
+        return 1;
+    }
+
     std::cout << "ml-training(" << us << "): running PCA on S3 dir "
               << s3dir
               << std::endl
@@ -307,7 +314,8 @@ int main(int argc, char** argv) {
         std::string labelsKey = "ml-training/outputs/" + us + "/rf-" + std::to_string(i) + "-labels";
         std::string pcaInput = std::to_string(id) + ":" + std::to_string(i) + ":" + dataKey + ":" + labelsKey;
 #ifdef __faasm
-        int pcaId = faasmChainNamed("rf", (uint8_t*) pcaInput.c_str(), pcaInput.size());
+        // int pcaId = faasmChainNamed("rf", (uint8_t*) pcaInput.c_str(), pcaInput.size());
+        int pcaId = tless::chain("ml-training", "pca", id, "rf", i, pcaInput);
         trainFuncIds.push_back(std::to_string(pcaId));
 #endif
     }

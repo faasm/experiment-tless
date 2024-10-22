@@ -1,0 +1,9 @@
+funcs:
+  - name: fetch-public
+    scale: 1
+    chains_to: audit
+  - name: fetch-private
+    scale: 1
+    chains_to: audit
+  - name: audit
+    scale: 16

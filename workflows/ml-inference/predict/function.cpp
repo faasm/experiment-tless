@@ -30,6 +30,8 @@ extern "C"
 #include "libs/s3/S3Wrapper.hpp"
 #endif
 
+#include "tless.h"
+
 #include <filesystem>
 #include <iostream>
 #include <opencv2/opencv.hpp>
@@ -260,8 +262,13 @@ int main(int argc, char** argv) {
     s3::initS3Wrapper();
     s3::S3Wrapper s3cli;
 #endif
-
     std::string us = "predict-" + std::to_string(id);
+
+    if (!tless::checkChain("ml-inference", "predict", id)) {
+        std::cerr << "ml-inference(" << us << "): error checking TLess chain" << std::endl;
+        return 1;
+    }
+
     std::cout << "ml-inference(" << us << "): predicting for images in "
               << dataKey
               << std::endl

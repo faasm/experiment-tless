@@ -8,6 +8,10 @@ extern "C"
 #else
 #include "libs/s3/S3Wrapper.hpp"
 #endif
+
+#include "tless.h"
+
+#include <iostream>
 #include <map>
 #include <stdio.h>
 #include <string>
@@ -50,6 +54,11 @@ std::string serialiseWordCount(const std::map<std::string, int>& wordCount)
  */
 int main(int argc, char** argv)
 {
+    if (!tless::checkChain("word-count", "reducer", 0)) {
+        std::cerr << "word-count(splitter): error checking TLess chain" << std::endl;
+        return 1;
+    }
+
     // TODO: the bucket name is currently hardcoded
     std::string bucketName = "tless";
     std::string s3dir;

@@ -12,6 +12,7 @@ extern "C"
 #include "libs/s3/S3Wrapper.hpp"
 #endif
 
+#include "tless.h"
 #include "trade.h"
 
 #include <iostream>
@@ -53,6 +54,11 @@ std::string join(const std::vector<std::string>& stringList, const std::string& 
  */
 int main(int argc, char** argv)
 {
+    if (!tless::checkChain("finra", "fetch-public", 0)) {
+        std::cerr << "finra(fetch-public): error checking TLess chain" << std::endl;
+        return 1;
+    }
+
     // TODO: the bucket name is currently hardcoded
     std::string bucketName = "tless";
     std::string s3DataFile;
@@ -63,7 +69,7 @@ int main(int argc, char** argv)
     char inputChar[inputSize];
     faasmGetInput((uint8_t*)inputChar, inputSize);
 
-    s3DataFile.assign(inputChar);
+    s3DataFile.assign(inputChar, inputChar + inputSize);
 #else
     if (argc != 2) {
         std::cerr << "finra(fetch-public): error: cannot parse input from driver"

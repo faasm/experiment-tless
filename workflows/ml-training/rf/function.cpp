@@ -30,6 +30,8 @@ extern "C"
 #include "libs/s3/S3Wrapper.hpp"
 #endif
 
+#include "tless.h"
+
 #include <filesystem>
 #include <iostream>
 #include <opencv2/opencv.hpp>
@@ -119,6 +121,11 @@ int main(int argc, char** argv) {
 #endif
 
     std::string us = "rf-" + std::to_string(pid) + "-" + std::to_string(id);
+
+    if (!tless::checkChain("ml-training", "rf", pid * 10 + id)) {
+        std::cerr << "ml-training(" << us << "): error checking TLess chain" << std::endl;
+        return 1;
+    }
 
     std::cout << "ml-training(" << us << "): training random forest on data "
               << dataKey

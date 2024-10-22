@@ -9,6 +9,8 @@ extern "C"
 #include "libs/s3/S3Wrapper.hpp"
 #endif
 
+#include "tless.h"
+
 #include <iostream>
 #include <map>
 #include <sstream>
@@ -102,6 +104,11 @@ int main(int argc, char** argv)
 
     std::string us = "mapper-" + std::to_string(id);
 
+    if (!tless::checkChain("word-count", "mapper", id)) {
+        std::cerr << "word-count(" << us << "): error checking TLess chain" << std::endl;
+        return 1;
+    }
+
     // Read object from S3
     uint8_t* keyBytes;
 #ifdef __faasm
@@ -110,10 +117,13 @@ int main(int argc, char** argv)
     int ret =
       __faasm_s3_get_key_bytes(bucketName.c_str(), s3ObjectKey.c_str(), &keyBytes, &keyBytesLen);
     if (ret != 0) {
-        printf("word-count(%s): error getting bytes from key: %s (bucket: %s)\n",
-               us.c_str(),
-               s3ObjectKey.c_str(),
-               bucketName.c_str());
+        std::cerr << "word-count(" << us << "): error getting key bytes from key: "
+                  << s3ObjectKey
+                  << " (bucket: "
+                  << bucketName
+                  << " )"
+                  << std::endl;
+        return 1;
     }
 #else
     auto keyBytesVec = s3cli.getKeyBytes(bucketName, s3ObjectKey);

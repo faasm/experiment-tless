@@ -1,0 +1,9 @@
+funcs:
+  - name: splitter
+    scale: 1
+    chains_to: mapper
+  - name: mapper
+    scale: N
+    chains_to: reducer
+  - name: reducer
+    scale: 1

@@ -61,7 +61,7 @@ int main(int argc, char** argv)
     std::vector<std::string>  pcaIds = splitByDelimiter(partitionOutput, ",");
 
     // Wait for all PCA functions to have finished
-    printf("ml-training(driver): waiting for %zu PCA functions...\n", pcaIds.size());
+    printf("ml-training(driver): waiting for %zu PCA functions... (out: %s)\n", pcaIds.size(), partitionOutput);
     std::vector<int> trainIds;
     for (auto pcaIdStr : pcaIds) {
         int pcaId = std::stoi(pcaIdStr);
@@ -82,6 +82,7 @@ int main(int argc, char** argv)
 
     // Wait for all train functions to have finished
     printf("ml-training(driver): waiting for %zu RF train functions...\n", trainIds.size());
+    int i = 0;
     for (auto trainId : trainIds) {
         result = faasmAwaitCall(trainId);
         if (result != 0) {
